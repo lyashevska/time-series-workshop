@@ -1,0 +1,84 @@
+---
+title: "Spatiotemporal black swans with glmmfields"
+author: "Sean C. Anderson"
+output: html_document
+---
+
+First we need to install the R package. You will need a C++ compiler or Rtools on Windows.
+
+The source code for the package is available at: <https://github.com/seananderson/glmmfields>. It's been written by myself and Eric Ward. You can install it with this code:
+
+```{r}
+# install.packages("devtools")
+# devtools::install_github("seananderson/glmmfields", build_vignettes = TRUE)
+```
+
+Let's load the package and set up Stan parallel processing. 
+
+```{r}
+library(glmmfields)
+options(mc.cores = parallel::detectCores())
+```
+
+The package can be used to fit Generalized Linear Models (GLMs) to any spatially referenced data or data that is spatially referenced through time. It has the capability to allow the spatial pattern to have extreme changes through time, but this functionality doesn't have to be used. In fact, it can't be used if you only have one time slice of data.
+
+The example shown here is for spatiotemporal data. For a simpler GLM example with just spatial data and no extremes see the vignette:
+
+```{r, eval=FALSE}
+vignette("spatial-glms")
+```
+
+Let's simulate data with spatiotemporal heavy tails (degrees of freedom  = 3), with 12 years of data, described by a random field with a squared exponential covariance function. The parameter gp_rho describes the spatial correlation decay (small values are more wiggly and large values are more smooth) and gp_eta describes the scale of the spatial variance through time. We are using 12 "knots" to approximate the spatial surface through something called a predictive process model. This substantially speeds up how fast we can fit the models.
+
+```{r}
+set.seed(42)
+s <- sim_glmmfields(df = 3, n_draws = 12, n_knots = 12, gp_rho = 2, 
+  gp_eta = 0.2, sd_obs = 0.1)
+head(s$dat)
+print(s$plot)
+```
+
+Let's fit the model. For maximum simplicity, we don't have any covariates here and we are using a Gaussian error structure with an identity link (i.e. similar to a linear regression). The package can work with most of the same families as `glm()`.
+
+```{r}
+m <- glmmfields(y ~ 0, data = s$dat, time = "time",
+  lat = "lat", lon = "lon",
+  nknots = 12, estimate_df = TRUE, iter = 800)
+```
+
+```{r}
+print(m)
+```
+
+We can look at the parameter estimates:
+
+```{r}
+library(bayesplot)
+posterior <- rstan::extract(m$model, inc_warmup = FALSE, permuted = FALSE)
+pars <- c("df[1]", "gp_eta", "sigma[1]", "gp_rho")
+mcmc_trace(posterior,  pars = pars)
+mcmc_areas(as.matrix(m$model), pars = pars)
+```
+
+There are a number of built in plotting functions:
+
+```{r}
+plot(m, type = "prediction") + ggplot2::scale_color_gradient2()
+```
+
+```{r}
+plot(m, type = "spatial-residual")
+```
+
+```{r}
+plot(m, type = "residual-vs-fitted")
+```
+
+We can check the predictions:
+
+```{r}
+p <- predict(m, interval = "prediction", type = "response")
+plot(s$dat$y, p$estimate, col = "#00000080", xlab = "Observed", ylab = "Predicted")
+segments(s$dat$y, p$conf_low, s$dat$y, p$conf_high, lwd = 1, col = "#00000030")
+abline(a = 0, b = 1)
+```
