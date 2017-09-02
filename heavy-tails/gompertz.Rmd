@@ -1,14 +1,16 @@
 ---
-title: "Heavy-tailed Gompertz"
+title: "Heavy-tailed Gompertz Models with Stan"
 author: "Sean C. Anderson"
 output: html_document
 ---
 
-Let's fit a Gompertz model heavy-tailed process error to a time series of Grey heron counts from England. This is population ID 20579 from the Global Population Dynamics Database. (Data from Brooks, B., Traill, L. W., Bradshaw, C. J. A. 2006 Minimum viable population sizes and global extinction risk are unrelated. Ecology Letters, 9 (4), 375-382.)
+Let's fit a Gompertz model with heavy-tailed process error to a time series of grey heron counts from England. This is population ID 20579 from the Global Population Dynamics Database. 
+
+(Data from Brooks, B., Traill, L. W., Bradshaw, C. J. A. 2006 Minimum viable population sizes and global extinction risk are unrelated. Ecology Letters, 9 (4), 375-382.)
 
 We'll start by loading some packages and setting some options:
 
-```{r}
+```{r, message=FALSE}
 knitr::opts_knit$set(root.dir = "..")
 library(rstan)
 library(bayesplot)
@@ -26,7 +28,9 @@ ggplot(d, aes(sample_year, population_untransformed)) +
   geom_point()
 ```
 
-You can see the basic model we will work with in the file `gompertz.stan`. We can fit that model with Stan:
+You can see the basic model we will work with in the file `gompertz.stan`. 
+
+We can fit that model with Stan:
 
 ```{r, message=FALSE, warning=FALSE}
 m <- stan("heavy-tails/gompertz.stan", 
@@ -41,7 +45,7 @@ pars <- c("lambda", "b", "sigma_proc", "nu")
 print(m, pars = pars)
 traceplot(m, pars = pars)
 mcmc_hist(as.matrix(m), pars = pars)
-mcmc_areas(as.matrix(m), pars = pars)
+# mcmc_areas(as.matrix(m), pars = pars)
 # shinystan::launch_shinystan(m)
 ```
 

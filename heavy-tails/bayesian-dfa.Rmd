@@ -48,7 +48,7 @@ Now we can fit a DFA model with `fit_dfa`. Let's fix the degrees of freedom or n
 m <- fit_dfa(x$y_sim, num_trends = 2, nu_fixed = 3, iter = 1000)
 ```
 
-We should be very careful that the chains are well mixed, have converged, and are not bimodal. There can be problems with chains wandering between alternative combinations of loadings and trends, so it is essential that make sure this is not the case. We try to detect the worst of this and correct the chains internally but there are many cases we may not catch. We may explore other methods of constraining the loadings matrix in the future. It is particularly important to look at the loadings matrix.
+We should be very careful that the chains are well mixed, have converged, and are not bimodal. There can be problems with chains wandering between alternative combinations of loadings and trends, so it is essential to make sure this is not the case. We may explore other methods of constraining the loadings matrix in the future. It is particularly important to look at the loadings matrix.
 
 The Stan model is contained in the list element `$model`:
 
@@ -67,7 +67,6 @@ plot_loadings(r)
 ```
 
 Now in this case we knew the true underlying number of trends was 2. In reality we would not know this. We can compare models with information criteria such as the leave-one-out information criteria. 
-
 ```{r}
 m1 <- fit_dfa(x$y_sim, num_trends = 1, nu_fixed = 3, iter = 1000)
 
@@ -82,7 +81,7 @@ We can see that LOOIC strongly favors the correct 2 trend model.
 Alternatively, we have a built in function that will try a range of trend numbers and return the model with the lowest LOOIC:
 
 ```{r}
-f <- find_dfa_trends(x$y_sim, kmax = 2, iter = 1400, variance = "equal", nu_fixed = 3)
+f <- find_dfa_trends(x$y_sim, kmax = 2, iter = 1500, variance = "equal", nu_fixed = 3)
 f$summary
 # f$model
 ```

@@ -1,12 +1,12 @@
 ---
-title: "Spatiotemporal black swans with glmmfields"
+title: "Spatiotemporal Black Swans with glmmfields"
 author: "Sean C. Anderson"
 output: html_document
 ---
 
 First we need to install the R package. You will need a C++ compiler or Rtools on Windows.
 
-The source code for the package is available at: <https://github.com/seananderson/glmmfields>. It's been written by myself and Eric Ward. You can install it with this code:
+The source code for the package is available at: <https://github.com/seananderson/glmmfields>. It has been written by myself and Eric Ward. You can install it with this code:
 
 ```{r}
 # install.packages("devtools")
@@ -28,7 +28,9 @@ The example shown here is for spatiotemporal data. For a simpler GLM example wit
 vignette("spatial-glms")
 ```
 
-Let's simulate data with spatiotemporal heavy tails (degrees of freedom  = 3), with 12 years of data, described by a random field with a squared exponential covariance function. The parameter gp_rho describes the spatial correlation decay (small values are more wiggly and large values are more smooth) and gp_eta describes the scale of the spatial variance through time. We are using 12 "knots" to approximate the spatial surface through something called a predictive process model. This substantially speeds up how fast we can fit the models.
+Let's simulate data with spatiotemporal heavy tails (degrees of freedom = 3), with 12 years of data, described by a random field with a squared exponential covariance function. The parameter gp_rho describes the spatial correlation decay (small values are more wiggly and large values are more smooth) and gp_eta describes the scale of the spatial variance through time. We are using 12 "knots" to approximate the spatial surface through something called a predictive process model. This substantially speeds up how fast we can fit the models.
+
+See the following paper for details on predictive process models: Finley, A. O., H. Sang, S. Banerjee, and A. E. Gelfand. 2009. Improving the performance of predictive process modeling for large datasets. Computational statistics & data analysis 53:2873–2884.
 
 ```{r}
 set.seed(42)
@@ -38,7 +40,7 @@ head(s$dat)
 print(s$plot)
 ```
 
-Let's fit the model. For maximum simplicity, we don't have any covariates here and we are using a Gaussian error structure with an identity link (i.e. similar to a linear regression). The package can work with most of the same families as `glm()`.
+Let's fit the model. For maximum simplicity, we don't have any covariates here and we are using a Gaussian error structure with an identity link (i.e. similar to a linear regression). But covariates and GLM families can be specified exactly as they are for the `glm` function.
 
 ```{r}
 m <- glmmfields(y ~ 0, data = s$dat, time = "time",
