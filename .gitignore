@@ -1,4 +1,5 @@
 /notforgit
 .Rproj.user
 *~
-
+R/sim-bs.R
+heavy-tails/pres.R
