@@ -1,0 +1,15 @@
+##-----------------------------
+## Sequential parametric tests live coding session
+## CM: 04/10/2017
+## EPA tipping points workshop
+##-----------------------------
+
+## load the cpm library
+library(cpm)
+
+## read in the data
+wind <- read.csv("../data/wind_speed.csv")
+
+## plot the data
+with(wind, plot(year, speed, type = "l"))
+
