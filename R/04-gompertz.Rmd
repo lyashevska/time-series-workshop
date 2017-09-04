@@ -23,7 +23,7 @@ theme_set(theme_light())
 Let's read in the data:
 
 ```{r}
-d <- read.csv("heavy-tails/grey-heron.csv")
+d <- read.csv("data/grey-heron.csv")
 ggplot(d, aes(sample_year, population_untransformed)) +
   geom_point()
 ```
@@ -33,7 +33,7 @@ You can see the basic model we will work with in the file `gompertz.stan`.
 We can fit that model with Stan:
 
 ```{r, message=FALSE, warning=FALSE}
-m <- stan("heavy-tails/gompertz.stan", 
+m <- stan("R/stan/gompertz.stan",
   data = list(N = nrow(d), y = log(d$population_untransformed), nu_rate = 0.01),
   iter = 800)
 ```

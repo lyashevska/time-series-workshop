@@ -1,4 +1,5 @@
-install.packages(c("cpm", "MSwM", "dlm", "TMB", "loo", "rstan", "ggplot2", "devtools", "bayesplot"))
+install.packages(c("cpm", "MSwM", "dlm", "TMB", "loo", "rstan", 
+  "ggplot2", "devtools", "bayesplot", "knitr", "rmarkdown"))
 # devtools::install_github("fate-ewi/bayesdfa")
 # devtools::install_github("seananderson/glmmfields", build_vignettes = TRUE)
 
