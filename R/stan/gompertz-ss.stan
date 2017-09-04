@@ -2,7 +2,7 @@ data {
   int<lower=0> N;        // rows of data
   vector[N] y;           // vector to hold observations
   real<lower=0> nu_rate; // rate parameter for nu exponential prior
-    real<lower=0> sigma_obs; // observation SD on log scale
+  real<lower=0> sigma_obs; // observation SD on log scale
 }
 parameters {
   real lambda;
