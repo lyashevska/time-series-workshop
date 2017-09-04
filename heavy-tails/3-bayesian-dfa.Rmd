@@ -1,0 +1,89 @@
+---
+title: "Bayesian Dynamic Factor Analysis"
+author: "Sean C. Anderson"
+output: html_document
+---
+
+First we need to install the R package. You will need a C++ compiler or Rtools on Windows.
+
+The source code for the package is available at: <https://github.com/fate-ewi/bayesdfa>. It's been written by Eric Ward and myself. You can install it with this code:
+
+```{r}
+# install.packages("devtools")
+# devtools::install_github("fate-ewi/bayesdfa")
+```
+
+Let's load the package and set up Stan parallel processing. 
+
+```{r}
+library(bayesdfa)
+options(mc.cores = parallel::detectCores())
+```
+
+To demonstrate Bayesian Dynamic Factor Analysis (DFA) with our package bayesdfa we will use an internal simulation function to generate some data. Theoretically the model can be used on any data set where you have multiple timeseries that are likely to share some common trends.
+
+Included in the simulation function is an option to add an extreme value at a specified location. This value is added to the random walk. We will specify a data set with 2 underlying latent trends, 4 timeseries, and an observation error standard deviation of 0.2.
+
+```{r}
+set.seed(1)
+x <- sim_dfa(extreme_value = -4, extreme_loc = 10, sigma = 0.2, num_trends = 2, num_ts = 4)
+```
+
+These are the underlying trends. Note that our extreme event occurs at time step 10:
+
+```{r}
+matplot(t(x$x), type = "l");abline(v = 10)
+```
+
+And these are the timeseries themselves. First the true values and then the observed values with observation error incorporated. 
+
+```{r}
+matplot(t(x$pred), type = "l");abline(v = 10)
+matplot(t(x$y_sim), type = "l");abline(v = 10)
+```
+
+Now we can fit a DFA model with `fit_dfa`. Let's fix the degrees of freedom or nu parameter at a value that allows for heavy tails. Alternatively we could attempt to estimate it by setting `estimate_nu = TRUE`:
+
+```{r}
+m <- fit_dfa(x$y_sim, num_trends = 2, nu_fixed = 3, iter = 1000)
+```
+
+We should be very careful that the chains are well mixed, have converged, and are not bimodal. There can be problems with chains wandering between alternative combinations of loadings and trends, so it is essential to make sure this is not the case. We may explore other methods of constraining the loadings matrix in the future. It is particularly important to look at the loadings matrix.
+
+The Stan model is contained in the list element `$model`:
+
+```{r}
+m$model
+traceplot(m$model, pars = "Z")
+traceplot(m$model, pars = "sigma")
+```
+
+Now let's perform a varimax rotation and plot the trends and loadings. We will also highlight any jumps in the latent trends that exceed a threshold of a 1 in 1000 event:
+
+```{r}
+r <- rotate_trends(m)
+plot_trends(r, highlight_outliers = TRUE, threshold = 0.001)
+plot_loadings(r)
+```
+
+Now in this case we knew the true underlying number of trends was 2. In reality we would not know this. We can compare models with information criteria such as the leave-one-out information criteria. 
+```{r}
+m1 <- fit_dfa(x$y_sim, num_trends = 1, nu_fixed = 3, iter = 1000)
+
+library(loo)
+l2 <- loo(extract_log_lik(m$model))
+l1 <- loo(extract_log_lik(m1$model))
+compare(l2, l1)
+```
+
+We can see that LOOIC strongly favors the correct 2 trend model.
+
+Alternatively, we have a built in function that will try a range of trend numbers and return the model with the lowest LOOIC:
+
+```{r}
+f <- find_dfa_trends(x$y_sim, kmax = 2, iter = 1500, variance = "equal", nu_fixed = 3)
+f$summary
+# f$model
+```
+
+
