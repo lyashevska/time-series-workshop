@@ -49,7 +49,9 @@ mcmc_hist(as.matrix(m), pars = pars)
 # shinystan::launch_shinystan(m)
 ```
 
-We can extract the posterior samples with the function `rstan::extract()`. Part of the Stan code calculated predictions from our model. Alternatively, we could calculate them in R ourselves. We will also calculate residuals from our model.
+We can extract the posterior samples with the function `rstan::extract()`. Part
+of the Stan code calculated predictions from our model. Alternatively, we could
+calculate them in R ourselves. We will also calculate residuals from our model.
 
 ```{r}
 e <- extract(m)
@@ -79,7 +81,9 @@ ggplot(pred, aes(sample_year, resid)) +
   geom_hline(yintercept = c(thresh, -thresh), lty = 2)
 ```
 
-As a comparison, we could fit the model with normally distributed process error. We can compare the models with the leave-one-out information criterion (LOOIC).
+As a comparison, we could fit the model with normally distributed process
+error. We can compare the models with the leave-one-out information criterion
+(LOOIC).
 
 Also notice that the parameter estimates differ.
 
@@ -98,9 +102,13 @@ loo(extract_log_lik(m))
 loo(extract_log_lik(m2))
 ```
 
-Let's try fitting our model to a second data set where there aren't extremes. This time we will use a data set of population counts for house wrens in the mid 20th century in Illinois, USA. GPDD population ID 28.
+Let's try fitting our model to a second data set where there aren't extremes.
+This time we will use a data set of population counts for house wrens in the
+mid 20th century in Illinois, USA. GPDD population ID 28.
 
-(Data reference: Kendeigh, S.C. 1982 Bird populations in east central Illinois: fluctuations, variation and development over a half-century. Illinois Biological Monographs, 52:1-136)
+(Data reference: Kendeigh, S.C. 1982 Bird populations in east central Illinois:
+fluctuations, variation and development over a half-century. Illinois
+Biological Monographs, 52:1-136)
 
 ```{r}
 d_hw <- read.csv("heavy-tails/house-wren.csv")
@@ -118,7 +126,10 @@ m_hw <- stan("heavy-tails/gompertz.stan",
 print(m_hw, pars = pars)
 ```
 
-So in this case our estimate of nu (the degrees of freedom parameter) is much higher. In fact, it approximately matches the prior because the data are not informative about heavy tails. In this case it reverts to be effectively normal:
+So in this case our estimate of nu (the degrees of freedom parameter) is much
+higher. In fact, it approximately matches the prior because the data are not
+informative about heavy tails. In this case it reverts to be effectively
+normal:
 
 ```{r}
 prior <- rexp(1e6, rate = 0.01)
@@ -128,9 +139,12 @@ median(prior)
 abline(v = median(prior), col = "red", lwd = 2)
 ```
 
-This choice of prior is based on Fernandez C, Steel MFJ (1998) On Bayesian modeling of fat tails and skewness. J. Am. Stat. Assoc. 93(441):359–371.
+This choice of prior is based on Fernandez C, Steel MFJ (1998) On Bayesian
+modeling of fat tails and skewness. J. Am. Stat. Assoc. 93(441):359–371.
 
-Since our models are fit in a Bayesian framework, one useful value to calculate might be the probability density below some threshold value for the degrees of freedom parameter. For example:
+Since our models are fit in a Bayesian framework, one useful value to calculate
+might be the probability density below some threshold value for the degrees of
+freedom parameter. For example:
 
 ```{r}
 nu <- extract(m, pars = "nu")[[1]]
@@ -140,12 +154,49 @@ sum(nu < 10)/length(nu) # or mean(nu < 10)
 sum(nu_hw < 10)/length(nu) 
 ```
 
-We've often used a value of 10 as a threshold since nu values much above 10 render distributions that are almost indistinguishable from the normal. 
+We've often used a value of 10 as a threshold since nu values much above 10
+render distributions that are almost indistinguishable from the normal. 
 
-In the first case nu is less than 10 with 0.98 probability. In the second case, there is only about 0.09 probability of nu < 10. Remember that even with the prior, there is some probability that nu < 10.
+In the first case nu is less than 10 with `r mean(nu < 10)` probability. In the
+second case, there is only about a `r mean(nu_hw < 10)` probability of nu < 10.
+Remember that even with the prior, there is some probability that nu < 10.
 
 ```{r}
 mean(prior<10)
 ```
 
-An alternative prior, that we have used in our more recent work is `gamma(shape = 2, rate = 0.1)` as recommended in Juarez, M. A. and M. F. J. Steel. 2010. Model-based clustering of non-Gaussian panel data based on skew-t distributions. J. Bus. Econ. Stat., 28:52–66.
+An alternative prior, that we have used in our more recent work is `gamma(shape
+= 2, rate = 0.1)` as recommended in Juarez, M. A. and M. F. J. Steel. 2010.
+Model-based clustering of non-Gaussian panel data based on skew-t
+distributions. J. Bus. Econ. Stat., 28:52–66.
+
+<https://github.com/seananderson/heavy-tails/blob/master/analysis/1-compile-models.R>
+
+```{r}
+m <- stan("heavy-tails/gompertz-ss-est.stan", 
+  data = list(N = nrow(d), y = log(d$population_untransformed), nu_rate = 0.01, sigma_obs = 0.05),
+  iter = 2000, control = list(max_treedepth = 20, adapt_delta = 0.95))
+
+e <- extract(m, pars = "U")
+pred <- data.frame(
+  est = apply(e$U, 2, median),
+  l = apply(e$U, 2, quantile, probs = 0.025),
+  h = apply(e$U, 2, quantile, probs = 0.975),
+  sample_year = d$sample_year)
+ggplot(pred, aes(sample_year, est, ymin = l, ymax = h)) +
+  geom_ribbon(alpha = 0.4) +
+  geom_line() +
+  geom_point(aes(y = log(d$population_untransformed)))
+```
+
+Let's look at the parameters from our model:
+
+```{r}
+pars <- c("lambda", "b", "sigma_proc", "nu")
+print(m, pars = pars)
+traceplot(m, pars = pars)
+mcmc_hist(as.matrix(m), pars = pars)
+# mcmc_areas(as.matrix(m), pars = pars)
+# shinystan::launch_shinystan(m)
+```
+
