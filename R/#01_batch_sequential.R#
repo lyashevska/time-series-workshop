@@ -47,11 +47,11 @@ legend("topright", legend = c("Student t", "Mann-Whitney"), lty = 2, col = c("ma
 ##-----------------------------------------------------------
 ## Student t
 processStudent <- processStream(y, cpmType = "Student", startup = 10)
-## check if change(s) detected
+## 
 ## plot out the test statistic
-plot(year, resultsMW$Ds)
-abline(h = resultsMW$threshold, lty = 2)
-points(year[resultsMW$changePoint], resultsMW$Ds[resultsMW$changePoint], col = "red", cex = 2)
+plot(year, processStudent$Ds)
+abline(h = processStudent$threshold, lty = 2)
+points(year[processStudent$changePoint], processStudent$Ds[processStudent$changePoint], col = "red", cex = 2)
 
 
 
