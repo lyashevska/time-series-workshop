@@ -14,7 +14,7 @@ year <- wind$year
 y <- wind$speed
 
 ## plot the data
-plot(year, y, type = "l", col = "purple", ylab = "Speed (knots)")
+plot(year, y, type = "o", col = "purple", ylab = "Speed (knots)", pch = 19, bty = "l")
 
 ##---------------------------------------
 ## BATCH PROCESSING - SINGLE CHANGEPOINT 
@@ -22,7 +22,24 @@ plot(year, y, type = "l", col = "purple", ylab = "Speed (knots)")
 
 ## Student t-test
 resultsStudent <- detectChangePointBatch(y, cpmType = "Student", alpha = 0.05)
+## check if change detected
+## plot out the test statistic
+plot(year, resultsStudent$Ds)
+abline(h = resultsStudent$threshold, lty = 2)
+points(year[resultsStudent$changePoint], resultsStudent$Ds[resultsStudent$changePoint], col = "red", cex = 2)
+
+## Mann-Whitney
 resultsMW <- detectChangePointBatch(y, cpmType = "Mann-Whitney", alpha = 0.05)
+## check if change detected
+## plot out the test statistic
+plot(year, resultsMW$Ds)
+abline(h = resultsMW$threshold, lty = 2)
+points(year[resultsMW$changePoint], resultsMW$Ds[resultsMW$changePoint], col = "red", cex = 2)
+
+## plot the data
+plot(year, y, type = "o", col = "purple", ylab = "Speed (knots)", pch = 19, bty = "l")
+abline(v = year[resultsStudent$changePoint], lty = 2)
+abline(v = year[resultsMW$changePoint], lty = 4)
 
 ## can we run this ourselves?
 D <- numeric(n)
