@@ -8,7 +8,7 @@
 library(MSwM)
 
 ## read in the data
-heron <- read.csv("../data/house-heron.csv")
+heron <- read.csv("../data/grey-heron.csv")
 
 year <- heron$sample_year
 y <- log(heron$population_untransformed)
