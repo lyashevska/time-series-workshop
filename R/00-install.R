@@ -1,5 +1,5 @@
 install.packages(c("cpm", "MSwM", "dlm", "TMB", "loo", "rstan", 
-  "ggplot2", "devtools", "bayesplot", "knitr", "rmarkdown"))
+  "ggplot2", "devtools", "bayesplot", "knitr", "rmarkdown"), repos = "https://ftp.heanet.ie/mirrors/cran.r-project.org/")
 # devtools::install_github("fate-ewi/bayesdfa")
 # devtools::install_github("seananderson/glmmfields", build_vignettes = TRUE)
 
@@ -29,8 +29,9 @@ target += normal_lpdf(y  | mu, 1);
 } 
 "
 y <- rnorm(20) 
-dat <- list(N = 20, y = y); 
-fit <- rstan::stan(model_code = stanmodelcode, model_name = "example", 
+dat <- list(N = 20, y = y);
+library(rstan)
+fit <- stan(model_code = stanmodelcode, model_name = "example", 
   data = dat, iter = 2012, chains = 1, sample_file = 'norm.csv',
   verbose = TRUE) 
 
