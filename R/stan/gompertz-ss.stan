@@ -23,3 +23,10 @@ model {
   }
   y ~ normal(U, sigma_obs);
 }
+generated quantities {
+  vector[N] pred;
+  pred[1] = U[1];
+  for (i in 2:N) {
+    pred[i] = student_t_rng(nu, lambda + b * U[i-1], sigma_proc);
+  }
+}
