@@ -29,6 +29,7 @@ Let's read in the data:
 ```{r}
 d <- read.csv("data/grey-heron.csv")[,2:3]
 # d <- read.csv("data/wind-speed.csv")
+# d <- read.csv("data/cod-productivity.csv")
 names(d) <- c("year", "index")
 ggplot(d, aes(year, log(index))) +
   geom_point()
@@ -187,7 +188,7 @@ m <- stan("R/stan/gompertz-ss.stan",
 
 # m <- stan("R/stan/gompertz-ss-est.stan",
 #    data = list(N = nrow(d), y = log(d$index), nu_rate = 0.01),
-#    iter = 4000, control = list(max_treedepth = 15, adapt_delta = 0.95), chains = 8)
+#    iter = 8000, control = list(max_treedepth = 15, adapt_delta = 0.99), chains = 8)
 ```
 
 ```{r}
