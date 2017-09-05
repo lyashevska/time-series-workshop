@@ -72,7 +72,8 @@ library(TMB)
 ## ----eval = FALSE, warning = FALSE---------------------------------------
 ## 
 ## ## step takes a while (on my machine anyway)
-## compile("unknown_mean.cpp")
+##
+compile("unknown_mean.cpp")
 ## 
 
 ## ------------------------------------------------------------------------
@@ -235,7 +236,8 @@ lwr<- ks$s[-1] + hwid * 1 # *-1 to make positive
 ## ----eval = FALSE--------------------------------------------------------
 ## 
 ## library(TMB); library(knitr)
-## compile("mixture_timeseries.cpp")
+##
+compile("mixture_timeseries.cpp")
 ## 
 
 ## ----warning = FALSE-----------------------------------------------------
