@@ -22,7 +22,7 @@ model {
   for (i in 2:N) {
     U[i] ~ student_t(nu, lambda + b * U[i-1], sigma_proc);
   }
-  y ~ normal(U, sigma_obs);
+  y ~ normal(U, sigma_obs/10);
 }
 generated quantities {
   vector[N] pred;
