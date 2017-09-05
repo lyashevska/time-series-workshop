@@ -20,7 +20,14 @@ model {
   nu ~ exponential(nu_rate);
   
   for (i in 2:N) {
-    U[i] ~ student_t(nu, lambda + b * U[i-1], sigma_proc/10);
+    U[i] ~ student_t(nu, lambda + b * U[i-1], sigma_proc);
   }
-  y ~ normal(U, sigma_obs/10);
+  y ~ normal(U, sigma_obs);
+}
+generated quantities {
+  vector[N] pred;
+  pred[1] = U[1];
+  for (i in 2:N) {
+    pred[i] = student_t_rng(nu, lambda + b * U[i-1], sigma_proc);
+  }
 }

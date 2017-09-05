@@ -1,12 +1,16 @@
 ---
 title: "Heavy-tailed Gompertz Models with Stan"
-author: "Sean C. Anderson"
+author: Sean Anderson
 output: html_document
 ---
 
-Let's fit a Gompertz model with heavy-tailed process error to a time series of grey heron counts from England. This is population ID 20579 from the Global Population Dynamics Database. 
+Let's fit a Gompertz model with heavy-tailed process error to a time series of
+grey heron counts from England. This is population ID 20579 from the Global
+Population Dynamics Database.
 
-(Data from Brooks, B., Traill, L. W., Bradshaw, C. J. A. 2006 Minimum viable population sizes and global extinction risk are unrelated. Ecology Letters, 9 (4), 375-382.)
+(Data from Brooks, B., Traill, L. W., Bradshaw, C. J. A. 2006 Minimum viable
+population sizes and global extinction risk are unrelated. Ecology Letters, 9
+(4), 375-382.)
 
 We'll start by loading some packages and setting some options:
 
@@ -23,18 +27,20 @@ theme_set(theme_light())
 Let's read in the data:
 
 ```{r}
-d <- read.csv("data/grey-heron.csv")
-ggplot(d, aes(sample_year, population_untransformed)) +
+d <- read.csv("data/grey-heron.csv")[,2:3]
+# d <- read.csv("data/wind-speed.csv")
+names(d) <- c("year", "index")
+ggplot(d, aes(year, log(index))) +
   geom_point()
 ```
 
-You can see the basic model we will work with in the file `gompertz.stan`. 
+You can see the basic model we will work with in the file `R/stan/gompertz.stan`. 
 
 We can fit that model with Stan:
 
 ```{r, message=FALSE, warning=FALSE}
 m <- stan("R/stan/gompertz.stan",
-  data = list(N = nrow(d), y = log(d$population_untransformed), nu_rate = 0.01),
+  data = list(N = nrow(d), y = log(d$index), nu_rate = 0.01),
   iter = 800)
 ```
 
@@ -59,24 +65,24 @@ pred <- data.frame(
   est = apply(e$pred, 2, median),
   l = apply(e$pred, 2, quantile, probs = 0.025),
   h = apply(e$pred, 2, quantile, probs = 0.975),
-  sample_year = d$sample_year)
-pred$resid <- log(d$population_untransformed) - pred$est
+  year = d$year)
+pred$resid <- log(d$index) - pred$est
 thresh <- qnorm(0.0001, 0, sd = median(e$sigma_proc))
 ```
 
 Let's plot our predictions with the data overlaid:
 
 ```{r}
-ggplot(pred, aes(sample_year, est, ymin = l, ymax = h)) +
+ggplot(pred, aes(year, est, ymin = l, ymax = h)) +
   geom_ribbon(alpha = 0.4) +
   geom_line() +
-  geom_point(aes(y = log(d$population_untransformed)))
+  geom_point(aes(y = log(d$index)))
 ```
 
 And we can look at which residuals exceed some arbitrary threshold:
 
 ```{r}
-ggplot(pred, aes(sample_year, resid)) +
+ggplot(pred, aes(year, resid)) +
   geom_line() +
   geom_hline(yintercept = c(thresh, -thresh), lty = 2)
 ```
@@ -88,8 +94,8 @@ error. We can compare the models with the leave-one-out information criterion
 Also notice that the parameter estimates differ.
 
 ```{r, message=FALSE, warning=FALSE}
-m2 <- stan("heavy-tails/gompertz-normal.stan", 
-  data = list(N = nrow(d), y = log(d$population_untransformed)),
+m2 <- stan("R/stan/gompertz-normal.stan",
+  data = list(N = nrow(d), y = log(d$index)),
   iter = 800)
 ```
 
@@ -111,14 +117,15 @@ fluctuations, variation and development over a half-century. Illinois
 Biological Monographs, 52:1-136)
 
 ```{r}
-d_hw <- read.csv("heavy-tails/house-wren.csv")
-ggplot(d_hw, aes(sample_year, population_untransformed)) +
+d_hw <- read.csv("data/house-wren.csv")[,2:3]
+names(d_hw) <- c("year", "index")
+ggplot(d_hw, aes(year, index)) +
   geom_point()
 ```
 
 ```{r, message=FALSE, warning=FALSE}
-m_hw <- stan("heavy-tails/gompertz.stan", 
-  data = list(N = nrow(d_hw), y = log(d_hw$population_untransformed), nu_rate = 0.01),
+m_hw <- stan("R/stan/gompertz.stan", 
+  data = list(N = nrow(d_hw), y = log(d_hw$index), nu_rate = 0.01),
   iter = 800)
 ```
 
@@ -133,7 +140,7 @@ normal:
 
 ```{r}
 prior <- rexp(1e6, rate = 0.01)
-prior <- prior[prior>2]
+prior <- prior[prior > 2]
 hist(prior)
 median(prior)
 abline(v = median(prior), col = "red", lwd = 2)
@@ -162,41 +169,45 @@ second case, there is only about a `r mean(nu_hw < 10)` probability of nu < 10.
 Remember that even with the prior, there is some probability that nu < 10.
 
 ```{r}
-mean(prior<10)
+mean(prior < 10)
 ```
 
-An alternative prior, that we have used in our more recent work is `gamma(shape
-= 2, rate = 0.1)` as recommended in Juarez, M. A. and M. F. J. Steel. 2010.
-Model-based clustering of non-Gaussian panel data based on skew-t
-distributions. J. Bus. Econ. Stat., 28:52–66.
+An alternative prior, that we have used in our more recent work is 
+`gamma(shape = 2, rate = 0.1)` as recommended in 
+Juarez, M. A. and M. F. J. Steel. 2010. Model-based clustering of
+non-Gaussian panel data based on skew-t distributions. J. Bus. 
+Econ. Stat., 28:52–66.
 
-<https://github.com/seananderson/heavy-tails/blob/master/analysis/1-compile-models.R>
+Let's try a state-space version:
+
+```{r, message=FALSE, warning=FALSE}
+m <- stan("R/stan/gompertz-ss.stan",
+  data = list(N = nrow(d), y = log(d$index), nu_rate = 0.01, sigma_obs = 0.05),
+  iter = 2000, control = list(max_treedepth = 15, adapt_delta = 0.9))
+
+# m <- stan("R/stan/gompertz-ss-est.stan",
+#    data = list(N = nrow(d), y = log(d$index), nu_rate = 0.01),
+#    iter = 4000, control = list(max_treedepth = 15, adapt_delta = 0.95), chains = 8)
+```
 
 ```{r}
-m <- stan("heavy-tails/gompertz-ss-est.stan", 
-  data = list(N = nrow(d), y = log(d$population_untransformed), nu_rate = 0.01, sigma_obs = 0.05),
-  iter = 2000, control = list(max_treedepth = 20, adapt_delta = 0.95))
-
-e <- extract(m, pars = "U")
+e <- extract(m)
 pred <- data.frame(
-  est = apply(e$U, 2, median),
-  l = apply(e$U, 2, quantile, probs = 0.025),
-  h = apply(e$U, 2, quantile, probs = 0.975),
-  sample_year = d$sample_year)
-ggplot(pred, aes(sample_year, est, ymin = l, ymax = h)) +
-  geom_ribbon(alpha = 0.4) +
+  est = apply(e$pred, 2, median),
+  l = apply(e$pred, 2, quantile, probs = 0.025),
+  h = apply(e$pred, 2, quantile, probs = 0.975),
+  year = d$year)
+ggplot(pred, aes(year, est, ymin = l, ymax = h)) +
+  geom_ribbon(alpha = 0.5) +
   geom_line() +
-  geom_point(aes(y = log(d$population_untransformed)))
+  geom_point(aes(y = log(d$index)))
 ```
 
-Let's look at the parameters from our model:
+Look at the parameters from our model:
 
 ```{r}
-pars <- c("lambda", "b", "sigma_proc", "nu")
-print(m, pars = pars)
-traceplot(m, pars = pars)
-mcmc_hist(as.matrix(m), pars = pars)
-# mcmc_areas(as.matrix(m), pars = pars)
-# shinystan::launch_shinystan(m)
+print(m, pars = c("U", "pred", "pred_obs"), include = FALSE)
+traceplot(m, pars = c("U", "pred", "pred_obs"), include = FALSE)
 ```
 
+For many other possible heavy-tailed Stan population models, see <https://github.com/seananderson/heavy-tails/blob/master/analysis/1-compile-models.R>
