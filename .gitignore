@@ -7,3 +7,5 @@ heavy-tails/pres.R
 *.rds
 
 R/.Rhistory
+
+*.key
