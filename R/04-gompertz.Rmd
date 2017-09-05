@@ -178,6 +178,8 @@ Juarez, M. A. and M. F. J. Steel. 2010. Model-based clustering of
 non-Gaussian panel data based on skew-t distributions. J. Bus. 
 Econ. Stat., 28:52–66.
 
+Let's try a state-space version:
+
 ```{r, message=FALSE, warning=FALSE}
 m <- stan("R/stan/gompertz-ss.stan",
   data = list(N = nrow(d), y = log(d$index), nu_rate = 0.01, sigma_obs = 0.05),
@@ -201,7 +203,7 @@ ggplot(pred, aes(year, est, ymin = l, ymax = h)) +
   geom_point(aes(y = log(d$index)))
 ```
 
-Let's look at the parameters from our model:
+Look at the parameters from our model:
 
 ```{r}
 print(m, pars = c("U", "pred", "pred_obs"), include = FALSE)
