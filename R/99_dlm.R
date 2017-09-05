@@ -29,7 +29,9 @@ build <- function(theta){
     return(mod)
 }
 
-fit <- dlmMLE(y = y, parm = c(0, rep(log(0.1), 2)), build = build, hessian=T, method = "Nelder-Mead")
+fit <- dlmMLE(y = y, parm = c(0, rep(log(0.1), 2)), build = build, hessian=T, method = "Nelder-Mead", control = list(trace = 1))
+
+## INSPECT RESIDS!!
 
 ## filter
 build.hat <- build(fit$par)
@@ -41,6 +43,7 @@ se <- sqrt(unlist(
 ))
 se <- se[-1]
 ##
+plot(year, y, type = "o", col = "darkgrey", ylab = ylab, pch = 19, bty = "l")
 smooth.hat <- dropFirst(rowSums(smooth$s))
 lines(year, smooth.hat, col="blue")
 lines(year, smooth.hat + 2 * se, lty = 2, col="blue")
